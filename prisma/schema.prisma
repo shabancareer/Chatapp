@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  password      String
+  email         String   @unique
+  photo         String   @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+  emailVerified Boolean  @default(false)
+  // gender        GenderType @default(Other)
+  googleId      String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  // receivedChats Chat[]        @relation("ReceivedMessages")
+  // sentChats     Chat[]        @relation("SentMessages")
+  // groupMembers  GroupMember[]
+  // ownedGroups   Group[]       @relation("OwnerGroups")
+}
