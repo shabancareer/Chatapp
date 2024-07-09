@@ -8,16 +8,18 @@ datasource db {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  name          String
-  password      String
-  email         String   @unique
-  photo         String   @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
-  emailVerified Boolean  @default(false)
+  id                       Int      @id @default(autoincrement())
+  name                     String
+  password                 String
+  email                    String   @unique
+  photo                    String   @default("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg")
+  emailVerified            Boolean  @default(false)
   // gender        GenderType @default(Other)
-  googleId      String?  @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  googleId                 String?  @unique
+  resetpasswordtoken       String
+  resetpasswordtokenexpiry DateTime
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
   // receivedChats Chat[]        @relation("ReceivedMessages")
   // sentChats     Chat[]        @relation("SentMessages")
   // groupMembers  GroupMember[]

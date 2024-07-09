@@ -16,7 +16,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("API Running!..");
 });
-console.log(userRoute);
+
 app.use("/api/", userRoute);
 
 // Get the directory name and file name
