@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import prisma from "../DB/db.config.js";
 import bcrypt from "bcryptjs";
-import { generateToken, refreshAccessToken } from "./utils/generateToken.js";
+// import { PrismaClient } from "@prisma/client";
+import { generateToken } from "./utils/generateToken.js";
+// const prisma = new PrismaClient();
 
 export const singUp = async (req, res) => {
   const { name, email, password, photo } = req.body;
@@ -17,8 +19,8 @@ export const singUp = async (req, res) => {
       },
     });
     if (userExists) {
-      res.status(400).json({
-        status: 400,
+      return res.status(400).json({
+        success: false,
         message: "Email already taken. Please use another email.",
       });
     }
@@ -30,31 +32,18 @@ export const singUp = async (req, res) => {
         photo,
       },
     });
-    const token = await generateToken(newUser);
-    console.log("Token:-", token);
-    const refreshAccessToken = async (token) => {
-      try {
-        // Verify the provided refresh token
-        const decoded = jwt.verify(
-          token,
-          process.env.AUTH_REFRESH_TOKEN_SECRET
-        );
-
-        // If token is valid, generate a new access token
-        const accessToken = jwt.sign(
-          { userId: decoded.userId },
-          process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "15m" }
-        );
-        return Promise.resolve({ accessToken });
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    };
-    return res.status(200).json({
-      status: 200,
+    const tokens = await generateToken(newUser, res);
+    // console.log("Token:-", token);
+    const { accessToken, refreshToken } = tokens;
+    res.cookie(
+      refreshToken.cookie.name,
+      refreshToken,
+      refreshToken.cookie.options
+    );
+    return res.status(201).json({
+      success: true,
       data: newUser,
-      token: token,
+      accessToken,
       msg: "User created.",
     });
   } catch (error) {
@@ -62,5 +51,7 @@ export const singUp = async (req, res) => {
     return res
       .status(500)
       .json({ error: true, message: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
   }
 };
