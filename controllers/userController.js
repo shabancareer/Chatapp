@@ -35,11 +35,7 @@ export const singUp = async (req, res) => {
     const tokens = await generateToken(newUser, res);
     // console.log("Token:-", token);
     const { accessToken, refreshToken } = tokens;
-    res.cookie(
-      refreshToken.cookie.name,
-      refreshToken,
-      refreshToken.cookie.options
-    );
+    res.cookie(refreshToken.cookie, refreshToken, refreshToken.cookie);
     return res.status(201).json({
       success: true,
       data: newUser,
