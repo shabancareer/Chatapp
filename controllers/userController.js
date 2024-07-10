@@ -30,7 +30,8 @@ export const singUp = async (req, res) => {
         photo,
       },
     });
-    const token = generateToken(newUser);
+    const token = await generateToken(newUser);
+    console.log("Token:-", token);
     const refreshAccessToken = async (token) => {
       try {
         // Verify the provided refresh token

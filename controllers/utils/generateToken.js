@@ -33,7 +33,6 @@ export const refreshAccessToken = async (refreshToken) => {
       refreshToken,
       process.env.AUTH_REFRESH_TOKEN_SECRET
     );
-
     // If token is valid, generate a new access token
     const accessToken = jwt.sign(
       { userId: decoded.userId },
