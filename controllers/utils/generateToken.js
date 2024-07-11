@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import prisma from "../../DB/db.config.js";
 
-export const generateToken = async (user, res) => {
+export const generateToken = async (user) => {
   try {
     if (!user || !user.id) {
       throw new Error("Invalid user object or missing user ID");

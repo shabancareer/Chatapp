@@ -78,7 +78,21 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-    res.status(200).json({ message: "Login successful", userLogin });
+    const userLoginTokens = await generateToken(userLogin);
+    const { accessToken, refreshToken } = userLoginTokens;
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
+    return res.status(200).json({
+      success: true,
+      data: userLogin,
+      accessToken,
+      msg: "Login successful",
+    });
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ message: "Internal server error" });
