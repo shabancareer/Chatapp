@@ -35,7 +35,12 @@ export const singUp = async (req, res) => {
     const tokens = await generateToken(newUser, res);
     // console.log("Token:-", token);
     const { accessToken, refreshToken } = tokens;
-    res.cookie(refreshToken.cookie, refreshToken, refreshToken.cookie);
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
     return res.status(201).json({
       success: true,
       data: newUser,
@@ -47,6 +52,36 @@ export const singUp = async (req, res) => {
     return res
       .status(500)
       .json({ error: true, message: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    if (!email || !password) {
+      res.status(400);
+      throw new Error("Please Enter all the Fields");
+    }
+    const userLogin = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+    if (!userLogin) {
+      return res.status(400).json({
+        message: "Cannot find user with these credentials. Please singUp first",
+      });
+    }
+    const isMatch = await bcrypt.compare(password, userLogin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+    res.status(200).json({ message: "Login successful", userLogin });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ message: "Internal server error" });
   } finally {
     await prisma.$disconnect();
   }

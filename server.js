@@ -1,14 +1,15 @@
 import express from "express";
 import dotenv from "dotenv";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import cookieSession from "cookie-session";
+// import cookieSession from "cookie-session";
+import cookieParser from "cookie-parser";
 import passport from "passport";
 import path from "path";
 import userRoute from "./routes/userRoute.js";
 // import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
-app.use(express.json());
+app.use(cookieParser());
 
 // Use JSON middleware to parse JSON bodies
 app.use(express.json());

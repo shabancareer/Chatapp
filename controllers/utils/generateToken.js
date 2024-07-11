@@ -6,7 +6,7 @@ export const generateToken = async (user, res) => {
     if (!user || !user.id) {
       throw new Error("Invalid user object or missing user ID");
     }
-    const payload = { _id: user.id };
+    const payload = { _id: user.id, email: user.email };
 
     const accessToken = jwt.sign(
       payload,
@@ -19,22 +19,7 @@ export const generateToken = async (user, res) => {
       process.env.AUTH_REFRESH_TOKEN_SECRET,
       { expiresIn: process.env.AUTH_REFRESH_TOKEN_EXPIRY }
     );
-
-    // res.cookie("refreshToken", refreshToken, {
-    //   httpOnly: true,
-    //   sameSite: "None",
-    //   secure: true,
-    //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    // });
-
-    // return Promise.resolve({ accessToken, refreshToken });
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    });
+    // Set refresh token as a cookie
 
     return { accessToken, refreshToken };
 
