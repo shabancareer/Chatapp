@@ -1,4 +1,4 @@
-import CustomError from "./CustomError";
+import CustomError from "./CustomError.js";
 
 class AuthorizationError extends CustomError {
   /**
@@ -48,4 +48,4 @@ class AuthorizationError extends CustomError {
   }
 }
 
-module.exports = AuthorizationError;
+export default AuthorizationError;

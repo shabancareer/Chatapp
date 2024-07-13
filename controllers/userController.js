@@ -1,18 +1,28 @@
 import prisma from "../DB/db.config.js";
 import bcrypt from "bcryptjs";
-// import sendEmail "./utils/config/"
-// import { PrismaClient } from "@prisma/client";
-import { generateToken } from "./utils/generateToken.js";
-// const prisma = new PrismaClient();
+import { validationResult } from "express-validator";
 
-export const singUp = async (req, res) => {
-  const { name, email, password, photo } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
+import { sendEmail } from "../services/email/sendEmail.js";
+import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
+import CustomError from "./utils/config/errors/CustomError.js";
+import { generateToken } from "./utils/generateToken.js";
+
+const RESET_PASSWORD_TOKEN = {
+  expiry: process.env.RESET_PASSWORD_TOKEN_EXPIRY_MINS,
+};
+
+export const singUp = async (req, res, next) => {
   try {
-    if (!name || !email || !password) {
-      res.status(400);
-      throw new Error("Please Enter all the Fields");
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
+    const { name, email, password, photo } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // if (!name || !email || !password) {
+    //   res.status(400);
+    //   throw new Error("Please Enter all the Fields");
+    // }
     const userExists = await prisma.user.findUnique({
       where: {
         email: email,
@@ -48,7 +58,8 @@ export const singUp = async (req, res) => {
       msg: "User created.",
     });
   } catch (error) {
-    console.error("Error While SingUp new User:", error);
+    next(error);
+    // console.error("Error While SingUp new User:", error);
     return res
       .status(500)
       .json({ error: true, message: "Internal Server Error" });

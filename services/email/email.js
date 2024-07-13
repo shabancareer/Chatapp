@@ -5,7 +5,7 @@ const EMAIL = {
   authPass: process.env.AUTH_EMAIL_PASSWORD,
 };
 
-async function main(mailOptions) {
+export async function main(mailOptions) {
   // Create reusable transporter object using the default SMTP transport
   const transporter = nodemailer.createTransport({
     host: "sandbox.smtp.mailtrap.io",
@@ -25,4 +25,3 @@ async function main(mailOptions) {
 
   return info;
 }
-module.exports = main;

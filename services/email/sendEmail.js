@@ -1,12 +1,9 @@
-import main from "./email.js";
-
+import { main } from "./email.js";
 const fixedMailOptions = {
   from: process.env.EMAIL_FROM,
 };
 
-function sendEmail(options = {}) {
+export function sendEmail(options = {}) {
   const mailOptions = Object.assign({}, options, fixedMailOptions);
   return main(mailOptions);
 }
-
-module.exports.sendEmail = sendEmail;

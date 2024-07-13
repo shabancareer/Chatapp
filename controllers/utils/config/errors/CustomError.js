@@ -1,4 +1,4 @@
-class CustomError {
+class CustomError extends Error {
   /**
    * Custom Error Constructor with additional methods
    * @param {any} [message] - Optional error payload
@@ -14,4 +14,4 @@ class CustomError {
   }
 }
 
-module.exports = CustomError;
+export default CustomError;
