@@ -1,5 +1,6 @@
 import prisma from "../DB/db.config.js";
 import bcrypt from "bcryptjs";
+// import sendEmail "./utils/config/"
 // import { PrismaClient } from "@prisma/client";
 import { generateToken } from "./utils/generateToken.js";
 // const prisma = new PrismaClient();
