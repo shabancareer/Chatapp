@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import prisma from "../DB/db.config.js";
 import bcrypt from "bcryptjs";
 // import { PrismaClient } from "@prisma/client";
