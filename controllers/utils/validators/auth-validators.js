@@ -16,8 +16,9 @@ export const signupValidator = [
     .withMessage("Email is invalid")
     .bail()
     .custom(async (email) => {
-      // Finding if email exists in Database
-      const emailExists = await User.findOne({ email });
+      const emailExists = await prisma.user.findUnique({
+        where: { email },
+      });
       if (emailExists) {
         throw new Error("E-mail already in use");
       }

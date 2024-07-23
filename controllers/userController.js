@@ -20,21 +20,7 @@ export const singUp = async (req, res, next) => {
     }
     const { name, email, password, photo } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    // if (!name || !email || !password) {
-    //   res.status(400);
-    //   throw new Error("Please Enter all the Fields");
-    // }
-    const userExists = await prisma.user.findUnique({
-      where: {
-        email: email,
-      },
-    });
-    if (userExists) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already taken. Please use another email.",
-      });
-    }
+
     const newUser = await prisma.user.create({
       data: {
         name,
@@ -60,55 +46,57 @@ export const singUp = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
-    // console.error("Error While SingUp new User:", error);
-    // return res
-    //   .status(500)
-    //   .json({ error: true, message: "Internal Server Error down" });
   } finally {
     await prisma.$disconnect();
   }
 };
 
-export const login = async (req, res) => {
-  const { email, password } = req.body;
+export const login = async (req, res, next) => {
   try {
-    if (!email || !password) {
-      res.status(400);
-      throw new Error("Please Enter all the Fields");
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
-    const userLogin = await prisma.user.findUnique({
-      where: {
-        email: email,
-      },
-    });
-    if (!userLogin) {
-      return res.status(400).json({
-        message: "Cannot find user with these credentials. Please singUp first",
-      });
-    }
-    const isMatch = await bcrypt.compare(password, userLogin.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-    const userLoginTokens = await generateToken(userLogin);
-    const { accessToken, refreshToken } = userLoginTokens;
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    });
-    return res.status(200).json({
-      success: true,
-      data: userLogin,
-      accessToken,
-      msg: "Login successful",
-    });
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ message: "Internal server error" });
-  } finally {
-    await prisma.$disconnect();
-  }
+    const { email, password } = req.body;
+  } catch (error) {}
+  // const { email, password } = req.body;
+  // try {
+  //   if (!email || !password) {
+  //     res.status(400);
+  //     throw new Error("Please Enter all the Fields");
+  //   }
+  //   const userLogin = await prisma.user.findUnique({
+  //     where: {
+  //       email: email,
+  //     },
+  //   });
+  //   if (!userLogin) {
+  //     return res.status(400).json({
+  //       message: "Cannot find user with these credentials. Please singUp first",
+  //     });
+  //   }
+  //   const isMatch = await bcrypt.compare(password, userLogin.password);
+  //   if (!isMatch) {
+  //     return res.status(400).json({ message: "Invalid credentials" });
+  //   }
+  //   const userLoginTokens = await generateToken(userLogin);
+  //   const { accessToken, refreshToken } = userLoginTokens;
+  //   res.cookie("refreshToken", refreshToken, {
+  //     httpOnly: true,
+  //     sameSite: "None",
+  //     secure: true,
+  //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  //   });
+  //   return res.status(200).json({
+  //     success: true,
+  //     data: userLogin,
+  //     accessToken,
+  //     msg: "Login successful",
+  //   });
+  // } catch (error) {
+  //   console.error("Error during login:", error);
+  //   res.status(500).json({ message: "Internal server error" });
+  // } finally {
+  //   await prisma.$disconnect();
+  // }
 };

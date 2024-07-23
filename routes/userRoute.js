@@ -6,7 +6,7 @@ import validators from "../controllers/utils/validators/index.js";
 
 const router = Router();
 router.post("/singUp", validators.signupValidator, singUp);
-router.post("/login", login);
+router.post("/login", validators.loginValidator, login);
 
 // router.get("/protected-route", authCheck, (req, res) => {
 //   res
