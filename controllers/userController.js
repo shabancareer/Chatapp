@@ -1,7 +1,7 @@
 import prisma from "../DB/db.config.js";
 import bcrypt from "bcryptjs";
 import { validationResult } from "express-validator";
-
+// import authValidators from "./utils/validators/index.js";
 import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
@@ -14,6 +14,7 @@ const RESET_PASSWORD_TOKEN = {
 export const singUp = async (req, res, next) => {
   try {
     const errors = validationResult(req);
+    console.log(errors);
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
@@ -60,9 +61,9 @@ export const singUp = async (req, res, next) => {
   } catch (error) {
     next(error);
     // console.error("Error While SingUp new User:", error);
-    return res
-      .status(500)
-      .json({ error: true, message: "Internal Server Error" });
+    // return res
+    //   .status(500)
+    //   .json({ error: true, message: "Internal Server Error down" });
   } finally {
     await prisma.$disconnect();
   }

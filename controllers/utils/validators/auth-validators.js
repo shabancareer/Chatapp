@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 const defaultPhotoURL =
   "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg";
 
-module.exports.signupValidator = [
+export const signupValidator = [
   body("name").trim().notEmpty().withMessage("Name CANNOT be empty"),
   body("email")
     .trim()
@@ -36,7 +36,7 @@ module.exports.signupValidator = [
   }),
 ];
 
-module.exports.loginValidator = [
+export const loginValidator = [
   body("email")
     .trim()
     .notEmpty()
@@ -47,7 +47,7 @@ module.exports.loginValidator = [
   body("password").notEmpty().withMessage("Password CANNOT be empty"),
 ];
 
-module.exports.forgotPasswordValidator = [
+export const forgotPasswordValidator = [
   body("email")
     .trim()
     .notEmpty()
@@ -57,7 +57,7 @@ module.exports.forgotPasswordValidator = [
     .withMessage("Email is invalid"),
 ];
 
-module.exports.resetPasswordValidator = [
+export const resetPasswordValidator = [
   param("resetToken").notEmpty().withMessage("Reset token missing"),
   body("password")
     .notEmpty()

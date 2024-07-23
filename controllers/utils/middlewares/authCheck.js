@@ -1,13 +1,16 @@
-import jwt from " jsonwebtoken";
+import jwt from "jsonwebtoken";
+import AuthorizationError from "../config/errors/AuthorizationError.js";
 // const AuthorizationError = require("../config/errors/AuthorizationError.js");
+
 // Pull in Environment variables
 const ACCESS_TOKEN = {
   secret: process.env.AUTH_ACCESS_TOKEN_SECRET,
 };
 
-module.exports.requireAuthentication = async (req, res, next) => {
+export const requireAuthentication = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
+    console.log("Auth:-", authHeader);
     if (!authHeader?.startsWith("Bearer "))
       throw new AuthorizationError(
         "Authentication Error",

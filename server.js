@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import passport from "passport";
 import path from "path";
 import userRoute from "./routes/userRoute.js";
+import CustomError from "./controllers/utils/config/errors/CustomError.js";
+
 // import { fileURLToPath } from "url";
 dotenv.config();
 const app = express();
@@ -19,6 +21,18 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/", userRoute);
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  if (err instanceof CustomError) {
+    return res
+      .status(err.status)
+      .json({ message: err.feedback, errors: err.cause });
+  }
+  return res.status(500).json({ message: "Internal Server Error" });
+});
 
 // Get the directory name and file name
 // const __filename = fileURLToPath(import.meta.url);

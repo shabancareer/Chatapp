@@ -6,7 +6,13 @@ class CustomError extends Error {
    * @param {string} [feedback=""] - Optional feedback message you want to provide
    */
   constructor(message, statusCode, feedback = "") {
-    super(message);
+    let errorMessage = "";
+    if (Array.isArray(message)) {
+      errorMessage = message.map((err) => err.msg).join(", ");
+    } else {
+      errorMessage = message;
+    }
+    super(errorMessage);
     this.name = "CustomError";
     this.status = statusCode;
     this.cause = message;
