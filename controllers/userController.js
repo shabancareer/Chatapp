@@ -14,7 +14,6 @@ const RESET_PASSWORD_TOKEN = {
 export const singUp = async (req, res, next) => {
   try {
     const errors = validationResult(req);
-    console.log(errors);
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
@@ -54,49 +53,41 @@ export const singUp = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const errors = validationResult(req);
+    // console.log(errors);
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
     const { email, password } = req.body;
-  } catch (error) {}
-  // const { email, password } = req.body;
-  // try {
-  //   if (!email || !password) {
-  //     res.status(400);
-  //     throw new Error("Please Enter all the Fields");
-  //   }
-  //   const userLogin = await prisma.user.findUnique({
-  //     where: {
-  //       email: email,
-  //     },
-  //   });
-  //   if (!userLogin) {
-  //     return res.status(400).json({
-  //       message: "Cannot find user with these credentials. Please singUp first",
-  //     });
-  //   }
-  //   const isMatch = await bcrypt.compare(password, userLogin.password);
-  //   if (!isMatch) {
-  //     return res.status(400).json({ message: "Invalid credentials" });
-  //   }
-  //   const userLoginTokens = await generateToken(userLogin);
-  //   const { accessToken, refreshToken } = userLoginTokens;
-  //   res.cookie("refreshToken", refreshToken, {
-  //     httpOnly: true,
-  //     sameSite: "None",
-  //     secure: true,
-  //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-  //   });
-  //   return res.status(200).json({
-  //     success: true,
-  //     data: userLogin,
-  //     accessToken,
-  //     msg: "Login successful",
-  //   });
-  // } catch (error) {
-  //   console.error("Error during login:", error);
-  //   res.status(500).json({ message: "Internal server error" });
-  // } finally {
-  //   await prisma.$disconnect();
-  // }
+    const userLogin = await prisma.user.findUnique({
+      where: { email },
+    });
+    // console.log(userLogin);
+    if (!userLogin) {
+      throw new Error(
+        "E-mail Cannot find user with these credentials. Please singUp first"
+      );
+    }
+    const isMatch = await bcrypt.compare(password, userLogin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+    const userLoginTokens = await generateToken(userLogin, res);
+    const { accessToken, refreshToken } = userLoginTokens;
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
+    return res.status(201).json({
+      success: true,
+      data: userLogin,
+      accessToken,
+      msg: "User login.",
+    });
+  } catch (error) {
+    next(error);
+  } finally {
+    await prisma.$disconnect();
+  }
 };

@@ -38,13 +38,11 @@ export const signupValidator = [
 ];
 
 export const loginValidator = [
-  body("email")
-    .trim()
-    .notEmpty()
-    .withMessage("Email CANNOT be empty")
-    .bail()
-    .isEmail()
-    .withMessage("Email is invalid"),
+  body("email").trim().notEmpty().withMessage("Email CANNOT be empty"),
+  // .bail()
+  // .isEmail()
+  // .withMessage("Email is invalid"),
+
   body("password").notEmpty().withMessage("Password CANNOT be empty"),
 ];
 
