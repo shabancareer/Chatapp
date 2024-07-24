@@ -91,3 +91,29 @@ export const login = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
+
+export const logout = async (req, res, next) => {
+  try {
+    // const userId = req.userId;
+    const user = await prisma.user.findUnique({
+      where: {
+        id: user,
+      },
+    });
+    // return user;
+    const cookies = req.cookies;
+    const refreshToken = cookies[refreshToken.cookie.name];
+    const expireCookieOptions = Object.assign({}, refreshToken.cookie.options, {
+      expires: new Date(1),
+    });
+
+    // Destroy refresh token cookie
+    res.cookie(refreshToken.cookie.name, "", expireCookieOptions);
+    res.status(205).json({
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
