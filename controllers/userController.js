@@ -94,26 +94,49 @@ export const login = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
   try {
-    // const userId = req.userId;
+    const userId = req.userId;
+    if (!userId) {
+      throw new AuthorizationError(
+        "Authentication Error",
+        undefined,
+        "User is not authenticated"
+      );
+    }
     const user = await prisma.user.findUnique({
       where: {
-        id: user,
+        id: userId,
       },
     });
-    // return user;
+    if (!user) {
+      throw new CustomError(
+        "User Not Found",
+        404,
+        "Cannot find user with the provided ID"
+      );
+    }
     const cookies = req.cookies;
-    const refreshToken = cookies[refreshToken.cookie.name];
-    const expireCookieOptions = Object.assign({}, refreshToken.cookie.options, {
-      expires: new Date(1),
+    const refreshToken = cookies["refreshToken"];
+    if (!refreshToken) {
+      throw new AuthorizationError(
+        "Token Error",
+        undefined,
+        "Refresh token is missing"
+      );
+    }
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
     });
 
-    // Destroy refresh token cookie
-    res.cookie(refreshToken.cookie.name, "", expireCookieOptions);
-    res.status(205).json({
+    return res.status(200).json({
       success: true,
+      msg: "User Logout...!",
     });
   } catch (error) {
     console.log(error);
     next(error);
+  } finally {
+    await prisma.$disconnect();
   }
 };

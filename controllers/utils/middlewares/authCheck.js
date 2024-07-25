@@ -10,8 +10,11 @@ const ACCESS_TOKEN = {
 export const requireAuthentication = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
-    console.log("Auth:-", authHeader);
-    if (!authHeader?.startsWith("Bearer "))
+    console.log(authHeader);
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error(
+        "Authorization header is missing or does not start with 'Bearer '"
+      );
       throw new AuthorizationError(
         "Authentication Error",
         undefined,
@@ -21,6 +24,7 @@ export const requireAuthentication = async (req, res, next) => {
           error_description: "unknown authentication scheme",
         }
       );
+    }
 
     const accessTokenParts = authHeader.split(" ");
     const aTkn = accessTokenParts[1];
