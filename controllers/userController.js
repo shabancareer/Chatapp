@@ -140,3 +140,86 @@ export const logout = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
+
+export const logoutAllDevices = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const cookies = req.cookies;
+    const userRefreshToken = cookies["refreshToken"];
+    if (!userRefreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: "No refresh token found",
+      });
+    }
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Logged out from all devices",
+    });
+  } catch (error) {
+    next(error);
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const refreshAccessToken = async (req, res, next) => {
+  try {
+    const cookies = req.cookies;
+    const authHeader = req.header("Authorization");
+
+    if (!cookies.refreshToken) {
+      throw new AuthorizationError(
+        "Authentication error!",
+        "You are unauthenticated"
+        // {
+        //   realm: "reauth",
+        //   error: "no_rft",
+        //   error_description: "Refresh Token is missing!",
+        // }
+      );
+    }
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new AuthorizationError(
+        "Authentication Error",
+        "You are unauthenticated!",
+        {
+          realm: "reauth",
+          error: "invalid_access_token",
+          error_description: "access token error",
+        }
+      );
+    }
+    const accessTokenParts = authHeader.split(" ");
+    const staleAccessTkn = accessTokenParts[1];
+
+    const decodedExpiredAccessTkn = jwt.verify(
+      staleAccessTkn,
+      ACCESS_TOKEN.secret,
+      {
+        ignoreExpiration: true,
+      }
+    );
+    // const rfTkn = cookies[REFRESH_TOKEN.cookie.name];
+    // const decodedRefreshTkn = jwt.verify(rfTkn, REFRESH_TOKEN.secret);
+
+    const refreshToken = cookies.refreshToken;
+    console.log("refreshToken:-", refreshToken);
+  } catch (error) {}
+};

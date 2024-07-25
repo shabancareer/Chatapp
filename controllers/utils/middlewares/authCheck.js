@@ -10,7 +10,7 @@ const ACCESS_TOKEN = {
 export const requireAuthentication = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
-    console.log(authHeader);
+    // console.log(authHeader);
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.error(
         "Authorization header is missing or does not start with 'Bearer '"
@@ -28,17 +28,12 @@ export const requireAuthentication = async (req, res, next) => {
 
     const accessTokenParts = authHeader.split(" ");
     const aTkn = accessTokenParts[1];
-
     const decoded = jwt.verify(aTkn, ACCESS_TOKEN.secret);
-
     // Attach authenticated user and Access Token to request object
     req.userId = decoded._id;
     req.token = aTkn;
     next();
   } catch (err) {
-    // Authentication didn't go well
-    console.log(err);
-
     const expParams = {
       error: "expired_access_token",
       error_description: "access token is expired",
