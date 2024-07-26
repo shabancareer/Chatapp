@@ -7,6 +7,15 @@ import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
 import { generateToken } from "./utils/generateToken.js";
 
+const ACCESS_TOKEN = {
+  access: process.env.AUTH_ACCESS_TOKEN_SECRET,
+  expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY,
+};
+
+const REFRESH_TOKEN = {
+  refresh: process.env.AUTH_REFRESH_TOKEN_SECRET,
+  secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
+};
 const RESET_PASSWORD_TOKEN = {
   expiry: process.env.RESET_PASSWORD_TOKEN_EXPIRY_MINS,
 };
@@ -183,18 +192,19 @@ export const refreshAccessToken = async (req, res, next) => {
   try {
     const cookies = req.cookies;
     const authHeader = req.header("Authorization");
-
+    // console.log(cookies.refreshToken);
     if (!cookies.refreshToken) {
       throw new AuthorizationError(
         "Authentication error!",
-        "You are unauthenticated"
-        // {
-        //   realm: "reauth",
-        //   error: "no_rft",
-        //   error_description: "Refresh Token is missing!",
-        // }
+        "You are unauthenticated",
+        {
+          realm: "reauth",
+          error: "no_rft",
+          error_description: "Refresh Token is missing!",
+        }
       );
     }
+    // console.log(authHeader);
     if (!authHeader?.startsWith("Bearer ")) {
       throw new AuthorizationError(
         "Authentication Error",
@@ -206,20 +216,54 @@ export const refreshAccessToken = async (req, res, next) => {
         }
       );
     }
-    const accessTokenParts = authHeader.split(" ");
-    const staleAccessTkn = accessTokenParts[1];
 
-    const decodedExpiredAccessTkn = jwt.verify(
-      staleAccessTkn,
-      ACCESS_TOKEN.secret,
-      {
-        ignoreExpiration: true,
-      }
+    const rfTkn = cookies.refreshToken;
+    const decodedRefreshTkn = jwt.verify(rfTkn, REFRESH_TOKEN.refresh);
+    const userId = decodedRefreshTkn._id;
+    console.log(userId);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    // console.log(user);
+    if (!user) {
+      throw new AuthorizationError(
+        "Authentication Error",
+        "You are unauthenticated!",
+        {
+          realm: "reauth",
+        }
+      );
+    }
+    console.log(
+      "Removing stale access token from cookies in refresh handler..."
     );
-    // const rfTkn = cookies[REFRESH_TOKEN.cookie.name];
-    // const decodedRefreshTkn = jwt.verify(rfTkn, REFRESH_TOKEN.secret);
 
-    const refreshToken = cookies.refreshToken;
-    console.log("refreshToken:-", refreshToken);
-  } catch (error) {}
+    const newAccessToken = await generateToken(user.id, user.email, res);
+    const newRefreshToken = await generateToken(user.id, user.email, res);
+    // Generate new tokens
+    // console.log("NewAccessToken:-", newAccessToken);
+    // console.log("NewRefreshToken:-", newAccessToken);
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
+
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 15 * 60 * 1000, // 15 minutes in milliseconds
+    });
+    return res.status(200).json({
+      success: true,
+      accessToken: newAccessToken,
+      msg: "Tokens refreshed successfully.",
+    });
+  } catch (error) {
+    next(error);
+  } finally {
+    await prisma.$disconnect();
+  }
 };
