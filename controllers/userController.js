@@ -291,19 +291,18 @@ export const forgotPassword = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { email },
     });
-
     if (!user) throw new CustomError("Email not sent", 404);
     let resetToken = await generateToken(user, res);
+    console.log(resetToken);
     resetToken = encodeURIComponent(resetToken);
-    // console.log("resetToken:-", resetToken);
+
     const resetPath = req.header("X-reset-base");
     const origin = req.header("Origin");
-    console.log(resetPath);
-    console.log(origin);
+
     const resetUrl = resetPath
       ? `${resetPath}/${resetToken}`
       : `${origin}/resetpass/${resetToken}`;
-    console.log("Password reset URL: %s", resetUrl);
+
     const message = `
             <h1>You have requested to change your password</h1>
             <p>You are receiving this because someone(hopefully you) has requested to reset password for your account.<br/>

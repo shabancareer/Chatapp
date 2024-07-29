@@ -20,7 +20,7 @@ export const generateToken = async (user) => {
       { expiresIn: process.env.AUTH_REFRESH_TOKEN_EXPIRY }
     );
     // Set refresh token as a cookie
-
+    //Add one more generateResetToken function here
     return { accessToken, refreshToken };
 
     // const expiresAt = new Date();
