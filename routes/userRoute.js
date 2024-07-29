@@ -4,7 +4,7 @@ import {
   login,
   logout,
   logoutAllDevices,
-  refreshAccessToken,
+  refreshAccess,
 } from "../controllers/userController.js";
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
@@ -15,7 +15,7 @@ router.post("/singUp", validators.signupValidator, singUp);
 router.post("/login", validators.loginValidator, login);
 router.post("/logout", requireAuthentication, logout);
 router.post("/master-logout", requireAuthentication, logoutAllDevices);
-router.post("/reauth", refreshAccessToken);
+router.post("/reauth", refreshAccess);
 
 // router.get("/protected-route", authCheck, (req, res) => {
 //   res

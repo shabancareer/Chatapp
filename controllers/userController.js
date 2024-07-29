@@ -1,11 +1,12 @@
 import prisma from "../DB/db.config.js";
+import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { validationResult } from "express-validator";
 // import authValidators from "./utils/validators/index.js";
 import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
-import { generateToken } from "./utils/generateToken.js";
+import { generateToken, refreshAccessToken } from "./utils/generateToken.js";
 
 const ACCESS_TOKEN = {
   access: process.env.AUTH_ACCESS_TOKEN_SECRET,
@@ -188,11 +189,10 @@ export const logoutAllDevices = async (req, res, next) => {
   }
 };
 
-export const refreshAccessToken = async (req, res, next) => {
+export const refreshAccess = async (req, res, next) => {
   try {
     const cookies = req.cookies;
     const authHeader = req.header("Authorization");
-    // console.log(cookies.refreshToken);
     if (!cookies.refreshToken) {
       throw new AuthorizationError(
         "Authentication error!",
@@ -204,7 +204,6 @@ export const refreshAccessToken = async (req, res, next) => {
         }
       );
     }
-    // console.log(authHeader);
     if (!authHeader?.startsWith("Bearer ")) {
       throw new AuthorizationError(
         "Authentication Error",
@@ -216,15 +215,34 @@ export const refreshAccessToken = async (req, res, next) => {
         }
       );
     }
-
     const rfTkn = cookies.refreshToken;
-    const decodedRefreshTkn = jwt.verify(rfTkn, REFRESH_TOKEN.refresh);
+    let decodedRefreshTkn;
+    try {
+      if (!process.env.AUTH_REFRESH_TOKEN_SECRET) {
+        throw new Error(
+          "Refresh token secret is not set in environment variables!"
+        );
+      }
+      decodedRefreshTkn = jwt.verify(
+        rfTkn,
+        process.env.AUTH_REFRESH_TOKEN_SECRET
+      );
+    } catch (error) {
+      throw new AuthorizationError(
+        "Authentication Error",
+        "You are unauthenticated!",
+        {
+          realm: "reauth",
+          error: "invalid_refresh_token",
+          error_description: "Invalid refresh token!",
+        }
+      );
+    }
+
     const userId = decodedRefreshTkn._id;
-    console.log(userId);
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
-    // console.log(user);
     if (!user) {
       throw new AuthorizationError(
         "Authentication Error",
@@ -234,12 +252,9 @@ export const refreshAccessToken = async (req, res, next) => {
         }
       );
     }
-    console.log(
-      "Removing stale access token from cookies in refresh handler..."
-    );
-
-    const newAccessToken = await generateToken(user.id, user.email, res);
-    const newRefreshToken = await generateToken(user.id, user.email, res);
+    const tokens = await generateToken(user);
+    const newAccessToken = tokens.accessToken;
+    const newRefreshToken = tokens.refreshToken;
     // Generate new tokens
     // console.log("NewAccessToken:-", newAccessToken);
     // console.log("NewRefreshToken:-", newAccessToken);
