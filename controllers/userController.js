@@ -6,7 +6,7 @@ import { validationResult } from "express-validator";
 import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
-import { generateToken, refreshAccessToken } from "./utils/generateToken.js";
+import { generateToken } from "./utils/generateToken.js";
 
 const ACCESS_TOKEN = {
   access: process.env.AUTH_ACCESS_TOKEN_SECRET,
@@ -255,9 +255,7 @@ export const refreshAccess = async (req, res, next) => {
     const tokens = await generateToken(user);
     const newAccessToken = tokens.accessToken;
     const newRefreshToken = tokens.refreshToken;
-    // Generate new tokens
-    // console.log("NewAccessToken:-", newAccessToken);
-    // console.log("NewRefreshToken:-", newAccessToken);
+
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       sameSite: "None",
@@ -276,6 +274,80 @@ export const refreshAccess = async (req, res, next) => {
       accessToken: newAccessToken,
       msg: "Tokens refreshed successfully.",
     });
+  } catch (error) {
+    next(error);
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new CustomError(errors.array(), 422, errors.array(), 422);
+    }
+    const { email } = req.body;
+    console.log(email);
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) throw new CustomError("Email not sent", 404);
+    let resetToken = await generateToken(user, res);
+    resetToken = encodeURIComponent(resetToken);
+    // console.log("resetToken:-", resetToken);
+    const resetPath = req.header("X-reset-base");
+    const origin = req.header("Origin");
+    console.log(resetPath);
+    console.log(origin);
+    const resetUrl = resetPath
+      ? `${resetPath}/${resetToken}`
+      : `${origin}/resetpass/${resetToken}`;
+    console.log("Password reset URL: %s", resetUrl);
+    const message = `
+            <h1>You have requested to change your password</h1>
+            <p>You are receiving this because someone(hopefully you) has requested to reset password for your account.<br/>
+              Please click on the following link, or paste in your browser to complete the password reset.
+            </p>
+            <p>
+              <a href=${resetUrl} clicktracking=off>${resetUrl}</a>
+            </p>
+            <p>
+              <em>
+                If you did not request this, you can safely ignore this email and your password will remain unchanged.
+              </em>
+            </p>
+            <p>
+            <strong>DO NOT share this link with anyone else!</strong><br />
+              <small>
+                <em>
+                  This password reset link will <strong>expire after ${
+                    RESET_PASSWORD_TOKEN.expiry || 5
+                  } minutes.</strong>
+                </em>
+              <small/>
+            </p>
+        `;
+    try {
+      await sendEmail({
+        to: user.email,
+        html: message,
+        subject: "Reset password",
+      });
+
+      res.json({
+        message:
+          "An email has been sent to your email address. Check your email, and visit the link to reset your password",
+        success: true,
+      });
+    } catch (error) {
+      user.resetpasswordtoken = undefined;
+      user.resetpasswordtokenexpiry = undefined;
+      await user.save();
+
+      console.log(error.message);
+      throw new CustomError("Email not sent", 500);
+    }
   } catch (error) {
     next(error);
   } finally {
