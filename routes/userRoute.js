@@ -6,7 +6,12 @@ import {
   logoutAllDevices,
   refreshAccess,
   forgotPassword,
+  resetPassword,
 } from "../controllers/userController.js";
+import {
+  fetchUserProfile,
+  fetchAuthUserProfile,
+} from "../controllers/authController.js";
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";
@@ -18,6 +23,18 @@ router.post("/logout", requireAuthentication, logout);
 router.post("/master-logout", requireAuthentication, logoutAllDevices);
 router.post("/reauth", refreshAccess);
 router.post("/forgotpass", validators.forgotPasswordValidator, forgotPassword);
+router.patch(
+  "/resetpass/:resetToken",
+  validators.forgotPasswordValidator,
+  forgotPassword
+);
+router.get("/me", requireAuthentication, fetchAuthUserProfile);
+router.get(
+  "/id",
+  requireAuthentication,
+  validators.fetchUserProfileValidator,
+  fetchUserProfile
+);
 
 // router.get("/protected-route", authCheck, (req, res) => {
 //   res

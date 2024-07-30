@@ -6,7 +6,7 @@ import { validationResult } from "express-validator";
 import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
-import { generateToken } from "./utils/generateToken.js";
+import { generateToken, generateResetToken } from "./utils/generateToken.js";
 
 const ACCESS_TOKEN = {
   access: process.env.AUTH_ACCESS_TOKEN_SECRET,
@@ -16,9 +16,6 @@ const ACCESS_TOKEN = {
 const REFRESH_TOKEN = {
   refresh: process.env.AUTH_REFRESH_TOKEN_SECRET,
   secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
-};
-const RESET_PASSWORD_TOKEN = {
-  expiry: process.env.RESET_PASSWORD_TOKEN_EXPIRY_MINS,
 };
 
 export const singUp = async (req, res, next) => {
@@ -287,22 +284,21 @@ export const forgotPassword = async (req, res, next) => {
       throw new CustomError(errors.array(), 422, errors.array(), 422);
     }
     const { email } = req.body;
-    console.log(email);
     const user = await prisma.user.findUnique({
       where: { email },
     });
     if (!user) throw new CustomError("Email not sent", 404);
-    let resetToken = await generateToken(user, res);
-    console.log(resetToken);
+    let resetToken = await generateResetToken(user);
     resetToken = encodeURIComponent(resetToken);
 
-    const resetPath = req.header("X-reset-base");
-    const origin = req.header("Origin");
+    const resetPath =
+      req.header("X-reset-base") || "http://localhost:8080//resetpass";
+    const origin = req.header("Origin") || "http://localhost:8080/";
 
     const resetUrl = resetPath
       ? `${resetPath}/${resetToken}`
       : `${origin}/resetpass/${resetToken}`;
-
+    console.log("ResetUrl:-", resetUrl);
     const message = `
             <h1>You have requested to change your password</h1>
             <p>You are receiving this because someone(hopefully you) has requested to reset password for your account.<br/>
@@ -321,7 +317,7 @@ export const forgotPassword = async (req, res, next) => {
               <small>
                 <em>
                   This password reset link will <strong>expire after ${
-                    RESET_PASSWORD_TOKEN.expiry || 5
+                    process.env.RESET_PASSWORD_TOKEN_EXPIRY_MINS || 5
                   } minutes.</strong>
                 </em>
               <small/>
@@ -340,16 +336,61 @@ export const forgotPassword = async (req, res, next) => {
         success: true,
       });
     } catch (error) {
-      user.resetpasswordtoken = undefined;
-      user.resetpasswordtokenexpiry = undefined;
-      await user.save();
-
-      console.log(error.message);
+      console.error("Error sending email:", error);
+      await prisma.user.update({
+        where: { email },
+        data: { resetpasswordtoken: null, resetpasswordtokenexpiry: null },
+      });
       throw new CustomError("Email not sent", 500);
     }
   } catch (error) {
     next(error);
   } finally {
     await prisma.$disconnect();
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    console.log("req.params: ", req.params);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new CustomError(errors.array(), 422);
+    }
+    const resetToken = new String(req.params.resetToken);
+    const [tokenValue, tokenSecret] = decodeURIComponent(resetToken).split("+");
+    console.log({ tokenValue, tokenSecret });
+    // Recreate the reset Token hash
+    const resetTokenHash = crypto
+      .createHmac("sha256", tokenSecret)
+      .update(tokenValue)
+      .digest("hex");
+    const user = await prisma.user.findUnique({
+      resetpasswordtoken: resetTokenHash,
+      resetpasswordtokenexpiry: { $gt: Date.now() },
+    });
+    if (!user) throw new CustomError("The reset link is invalid", 400);
+    console.log(user);
+    user.password = req.body.password;
+    user.resetpasswordtoken = undefined;
+    user.resetpasswordtokenexpiry = undefined;
+
+    await user.save();
+    // Email to notify owner of the account
+    const message = `<h3>This is a confirmation that you have changed Password for your account.</h3>`;
+    // No need to await
+    sendEmail({
+      to: user.email,
+      html: message,
+      subject: "Password changed",
+    });
+
+    res.json({
+      message: "Password reset successful",
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    next(error);
   }
 };
