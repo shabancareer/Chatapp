@@ -372,12 +372,7 @@ export const resetPassword = async (req, res, next) => {
         },
       },
     });
-    console.log("User:-", user);
     if (!user) throw new CustomError("The reset link is invalid", 400);
-    console.log(user);
-    // user.password = req.body.password;
-    // user.resetpasswordtoken = undefined;
-    // user.resetpasswordtokenexpiry = undefined;
     await prisma.user.update({
       where: { id: user.id },
       data: {

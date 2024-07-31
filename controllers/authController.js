@@ -9,7 +9,12 @@ export const fetchUserProfile = async (req, res, next) => {
       throw new CustomError(errors.array(), 422, errors.array()[0]?.msg);
     }
     const userId = req.params.id;
-    const retrievedUser = await prisma.user.findById(userId);
+    const retrievedUser = await prisma.user.findUnique({
+      where: { id: parseInt(userId, 10) },
+    });
+    if (!retrievedUser) {
+      throw new CustomError("User not found", 404);
+    }
     res.json({
       success: true,
       user: retrievedUser,
@@ -19,10 +24,18 @@ export const fetchUserProfile = async (req, res, next) => {
     next(error);
   }
 };
+
 export const fetchAuthUserProfile = async (req, res, next) => {
   try {
     const userId = req.userId;
-    const user = await prisma.user.findById(userId);
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId, 10) },
+    });
+
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
+
     res.json({
       success: true,
       user,

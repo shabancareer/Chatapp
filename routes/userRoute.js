@@ -28,12 +28,13 @@ router.patch(
   resetPassword
 );
 router.get("/me", requireAuthentication, fetchAuthUserProfile);
-router.get(
-  "/id",
-  requireAuthentication,
-  validators.fetchUserProfileValidator,
-  fetchUserProfile
-);
+
+// router.get(
+//   "/:id",
+//   requireAuthentication,
+//   validators.fetchUserProfileValidator,
+//   fetchUserProfile
+// );
 
 // router.get("/protected-route", authCheck, (req, res) => {
 //   res
