@@ -1,5 +1,6 @@
 import prisma from "../DB/db.config.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { validationResult } from "express-validator";
 // import authValidators from "./utils/validators/index.js";
@@ -7,7 +8,6 @@ import { sendEmail } from "../services/email/sendEmail.js";
 import AuthorizationError from "./utils/config/errors/AuthorizationError.js";
 import CustomError from "./utils/config/errors/CustomError.js";
 import { generateToken, generateResetToken } from "./utils/generateToken.js";
-
 const ACCESS_TOKEN = {
   access: process.env.AUTH_ACCESS_TOKEN_SECRET,
   expiresIn: process.env.AUTH_ACCESS_TOKEN_EXPIRY,
@@ -298,7 +298,7 @@ export const forgotPassword = async (req, res, next) => {
     const resetUrl = resetPath
       ? `${resetPath}/${resetToken}`
       : `${origin}/resetpass/${resetToken}`;
-    console.log("ResetUrl:-", resetUrl);
+    // console.log("ResetUrl:-", resetUrl);
     const message = `
             <h1>You have requested to change your password</h1>
             <p>You are receiving this because someone(hopefully you) has requested to reset password for your account.<br/>
@@ -336,7 +336,7 @@ export const forgotPassword = async (req, res, next) => {
         success: true,
       });
     } catch (error) {
-      console.error("Error sending email:", error);
+      // console.error("Error sending email:", error);
       await prisma.user.update({
         where: { email },
         data: { resetpasswordtoken: null, resetpasswordtokenexpiry: null },
@@ -359,32 +359,42 @@ export const resetPassword = async (req, res, next) => {
     }
     const resetToken = new String(req.params.resetToken);
     const [tokenValue, tokenSecret] = decodeURIComponent(resetToken).split("+");
-    console.log({ tokenValue, tokenSecret });
-    // Recreate the reset Token hash
     const resetTokenHash = crypto
       .createHmac("sha256", tokenSecret)
       .update(tokenValue)
       .digest("hex");
-    const user = await prisma.user.findUnique({
-      resetpasswordtoken: resetTokenHash,
-      resetpasswordtokenexpiry: { $gt: Date.now() },
+    console.log("resetTokenHash:-", resetTokenHash);
+    const user = await prisma.user.findFirst({
+      where: {
+        resetpasswordtoken: resetTokenHash,
+        resetpasswordtokenexpiry: {
+          gt: new Date(),
+        },
+      },
     });
+    console.log("User:-", user);
     if (!user) throw new CustomError("The reset link is invalid", 400);
     console.log(user);
-    user.password = req.body.password;
-    user.resetpasswordtoken = undefined;
-    user.resetpasswordtokenexpiry = undefined;
+    // user.password = req.body.password;
+    // user.resetpasswordtoken = undefined;
+    // user.resetpasswordtokenexpiry = undefined;
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: req.body.password,
+        resetpasswordtoken: null,
+        resetpasswordtokenexpiry: null,
+      },
+    });
 
-    await user.save();
     // Email to notify owner of the account
     const message = `<h3>This is a confirmation that you have changed Password for your account.</h3>`;
     // No need to await
-    sendEmail({
+    await sendEmail({
       to: user.email,
       html: message,
       subject: "Password changed",
     });
-
     res.json({
       message: "Password reset successful",
       success: true,

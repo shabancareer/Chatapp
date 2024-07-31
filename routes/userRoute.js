@@ -15,7 +15,6 @@ import {
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";
-
 const router = Router();
 router.post("/singUp", validators.signupValidator, singUp);
 router.post("/login", validators.loginValidator, login);
@@ -26,7 +25,7 @@ router.post("/forgotpass", validators.forgotPasswordValidator, forgotPassword);
 router.patch(
   "/resetpass/:resetToken",
   validators.forgotPasswordValidator,
-  forgotPassword
+  resetPassword
 );
 router.get("/me", requireAuthentication, fetchAuthUserProfile);
 router.get(
