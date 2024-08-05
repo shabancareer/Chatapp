@@ -64,11 +64,13 @@ export const resetPasswordValidator = [
     .bail()
     .isLength({ min: 4 })
     .withMessage("Password MUST be at least 4 characters long"),
-  body("passwordConfirm").custom((value, { req }) => {
-    if (value !== req.body.password) {
-      throw new Error("Passwords DO NOT match");
-    }
+  body("passwordConfirm")
+    .optional()
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error("Passwords DO NOT match");
+      }
 
-    return true;
-  }),
+      return true;
+    }),
 ];

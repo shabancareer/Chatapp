@@ -24,7 +24,7 @@ router.post("/reauth", refreshAccess);
 router.post("/forgotpass", validators.forgotPasswordValidator, forgotPassword);
 router.patch(
   "/resetpass/:resetToken",
-  validators.forgotPasswordValidator,
+  validators.resetPasswordValidator,
   resetPassword
 );
 router.get("/me", requireAuthentication, fetchAuthUserProfile);

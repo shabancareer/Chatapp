@@ -74,7 +74,9 @@ export const login = async (req, res, next) => {
         "E-mail Cannot find user with these credentials. Please singUp first"
       );
     }
+    console.log(password, userLogin.password);
     const isMatch = await bcrypt.compare(password, userLogin.password);
+    console.log(isMatch);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -352,18 +354,19 @@ export const forgotPassword = async (req, res, next) => {
 
 export const resetPassword = async (req, res, next) => {
   try {
-    console.log("req.params: ", req.params);
+    // console.log("req.params: ", req.params);
+    console.log(req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422);
     }
     const resetToken = new String(req.params.resetToken);
     const [tokenValue, tokenSecret] = decodeURIComponent(resetToken).split("+");
+    console.log(tokenValue, tokenSecret);
     const resetTokenHash = crypto
       .createHmac("sha256", tokenSecret)
       .update(tokenValue)
       .digest("hex");
-    console.log("resetTokenHash:-", resetTokenHash);
     const user = await prisma.user.findFirst({
       where: {
         resetpasswordtoken: resetTokenHash,
@@ -373,10 +376,16 @@ export const resetPassword = async (req, res, next) => {
       },
     });
     if (!user) throw new CustomError("The reset link is invalid", 400);
+    const newPassword = req.body.password;
+    if (!newPassword || newPassword.length < 4) {
+      // Example validation
+      throw new CustomError("Password must be at least 4 characters long", 400);
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        password: req.body.password,
+        password: hashedPassword,
         resetpasswordtoken: null,
         resetpasswordtokenexpiry: null,
       },
