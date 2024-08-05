@@ -74,9 +74,8 @@ export const login = async (req, res, next) => {
         "E-mail Cannot find user with these credentials. Please singUp first"
       );
     }
-    console.log(password, userLogin.password);
     const isMatch = await bcrypt.compare(password, userLogin.password);
-    console.log(isMatch);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -300,7 +299,7 @@ export const forgotPassword = async (req, res, next) => {
     const resetUrl = resetPath
       ? `${resetPath}/${resetToken}`
       : `${origin}/resetpass/${resetToken}`;
-    // console.log("ResetUrl:-", resetUrl);
+
     const message = `
             <h1>You have requested to change your password</h1>
             <p>You are receiving this because someone(hopefully you) has requested to reset password for your account.<br/>
@@ -338,7 +337,6 @@ export const forgotPassword = async (req, res, next) => {
         success: true,
       });
     } catch (error) {
-      // console.error("Error sending email:", error);
       await prisma.user.update({
         where: { email },
         data: { resetpasswordtoken: null, resetpasswordtokenexpiry: null },
@@ -354,15 +352,13 @@ export const forgotPassword = async (req, res, next) => {
 
 export const resetPassword = async (req, res, next) => {
   try {
-    // console.log("req.params: ", req.params);
-    console.log(req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       throw new CustomError(errors.array(), 422);
     }
     const resetToken = new String(req.params.resetToken);
     const [tokenValue, tokenSecret] = decodeURIComponent(resetToken).split("+");
-    console.log(tokenValue, tokenSecret);
+
     const resetTokenHash = crypto
       .createHmac("sha256", tokenSecret)
       .update(tokenValue)
