@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import passport from "passport";
 import path from "path";
 import userRoute from "./routes/userRoute.js";
+import chatRoute from "./routes/chatRoute.js";
 import CustomError from "./controllers/utils/config/errors/CustomError.js";
 
 // import { fileURLToPath } from "url";
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/", userRoute);
+app.use("/api/", chatRoute);
 app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);

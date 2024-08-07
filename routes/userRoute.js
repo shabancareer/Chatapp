@@ -12,6 +12,7 @@ import {
   fetchUserProfile,
   fetchAuthUserProfile,
 } from "../controllers/authController.js";
+
 // import { requireAuthentication } from "./controllers/utils/middlewares/authCheck.js";
 import { requireAuthentication } from "../controllers/utils/middlewares/authCheck.js";
 import validators from "../controllers/utils/validators/index.js";
